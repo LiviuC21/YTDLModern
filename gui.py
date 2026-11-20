@@ -3,7 +3,7 @@
 import os
 from PyQt6.QtWidgets import (
     QMainWindow, QLabel, QLineEdit, QComboBox, QPushButton, QFileDialog, QProgressBar,
-    QVBoxLayout, QHBoxLayout, QWidget, QMessageBox
+    QVBoxLayout, QHBoxLayout, QWidget, QMessageBox, QCheckBox
 )
 from PyQt6.QtCore import Qt
 from styles import DARK_STYLE
@@ -46,6 +46,10 @@ class MainWindow(QMainWindow):
 
         self.layout.addLayout(self.folder_layout)
 
+        self.noplaylist_checkbox = QCheckBox('Descarcă doar videoclipul, nu tot playlist-ul', self)
+        self.noplaylist_checkbox.setChecked(True)
+        self.layout.addWidget(self.noplaylist_checkbox)
+
         self.progress_bar = QProgressBar(self)
         self.progress_bar.setRange(0, 100)
         self.progress_bar.setTextVisible(True)
@@ -56,7 +60,16 @@ class MainWindow(QMainWindow):
 
         self.download_button = QPushButton("Descarcă", self)
         self.download_button.clicked.connect(self.start_download)
-        self.layout.addWidget(self.download_button)
+
+        self.stop_button = QPushButton('Oprește descărcarea', self)
+        self.stop_button.setObjectName('stop_button')
+        self.stop_button.setEnabled(False)
+        self.stop_button.clicked.connect(self.stop_download)
+
+        self.button_layout = QHBoxLayout()
+        self.button_layout.addWidget(self.download_button)
+        self.button_layout.addWidget(self.stop_button)
+        self.layout.addLayout(self.button_layout)
 
         self.download_worker = None
 
@@ -73,14 +86,17 @@ class MainWindow(QMainWindow):
 
         output_path = self.folder_input.text()
         format_type = self.format_combo.currentText().split(' ')[0]
+        noplaylist = self.noplaylist_checkbox.isChecked()
 
         self.download_button.setEnabled(False)
         self.url_input.setEnabled(False)
         self.folder_input.setEnabled(False)
         self.folder_button.setEnabled(False)
         self.format_combo.setEnabled(False)
+        self.noplaylist_checkbox.setEnabled(False)
+        self.stop_button.setEnabled(True)
 
-        self.download_worker = DownloadWorker(url, output_path, format_type)
+        self.download_worker = DownloadWorker(url, output_path, format_type, noplaylist)
         self.download_worker.progress_updated.connect(self.update_progress)
         self.download_worker.download_finished.connect(self.download_finished)
         self.download_worker.start()
@@ -89,12 +105,19 @@ class MainWindow(QMainWindow):
         self.progress_bar.setValue(int(percent))
         self.status_label.setText(f"Progres: {percent:.2f}% - Viteză: {speed} - ETA: {eta} - Statut: {status}")
 
+    def stop_download(self):
+        if self.download_worker and self.download_worker.isRunning():
+            self.download_worker.stop()
+            self.status_label.setText('Se oprește descărcarea...')
+
     def download_finished(self, success, message):
         self.download_button.setEnabled(True)
         self.url_input.setEnabled(True)
         self.folder_input.setEnabled(True)
         self.folder_button.setEnabled(True)
         self.format_combo.setEnabled(True)
+        self.noplaylist_checkbox.setEnabled(True)
+        self.stop_button.setEnabled(False)
 
         if success:
             QMessageBox.information(self, "Succes", message)

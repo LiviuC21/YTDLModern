@@ -7,17 +7,23 @@ class DownloadWorker(QThread):
     progress_updated = pyqtSignal(float, str, str, str)
     download_finished = pyqtSignal(bool, str)
 
-    def __init__(self, url: str, output_path: str, format_type: str):
+    def __init__(self, url: str, output_path: str, format_type: str, noplaylist: bool = True):
         super().__init__()
         self.url = url
         self.output_path = output_path
         self.format_type = format_type
+        self.noplaylist = noplaylist
+        self._is_cancelled = False
+
+    def stop(self):
+        self._is_cancelled = True
 
     def run(self):
         ydl_opts = {
             'progress_hooks': [self._progress_hook],
             'outtmpl': os.path.join(self.output_path, '%(title)s.%(ext)s'),
-            'nocolors': True  # Add this option to avoid ANSI color escape sequences
+            'nocolors': True,  # Add this option to avoid ANSI color escape sequences
+            'noplaylist': self.noplaylist
         }
 
         if self.format_type == 'MP4':
@@ -42,6 +48,9 @@ class DownloadWorker(QThread):
             self.download_finished.emit(False, str(e))
 
     def _progress_hook(self, d):
+        if self._is_cancelled:
+            raise Exception('Descărcarea a fost oprită de utilizator.')
+
         if d['status'] == 'downloading':
             percent_str = d.get('_percent_str', '0%')
             percent_str = re.sub(r'\x1b\[[0-9;]*m', '', percent_str).strip()

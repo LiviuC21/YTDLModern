@@ -37,6 +37,24 @@ QPushButton:hover {
     background-color: #2563eb;
 }
 
+QPushButton:disabled {
+    background-color: #4b5563;
+    color: #6b7280;
+}
+
+QPushButton#stop_button {
+    background-color: #ef4444;
+}
+
+QPushButton#stop_button:hover {
+    background-color: #dc2626;
+}
+
+QPushButton#stop_button:disabled {
+    background-color: #6b7280;
+    color: #4b5563;
+}
+
 QComboBox {
     background-color: #27272a;
     border: 1px solid #3f3f46;
@@ -71,5 +89,20 @@ QProgressBar::chunk {
 QLabel {
     color: #ffffff;
     padding: 5px;
+}
+
+QCheckBox {
+    color: #ffffff;
+}
+
+QCheckBox::indicator {
+    border: 1px solid #3f3f46;
+    border-radius: 4px;
+    width: 16px;
+    height: 16px;
+}
+
+QCheckBox::indicator:checked {
+    background-color: #3b82f6;
 }
 """
